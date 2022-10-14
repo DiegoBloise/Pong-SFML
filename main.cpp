@@ -19,8 +19,6 @@ int scrWidth = 1280;
 int scrHeight = 720;
 
 
-
-
 ///////////////////// Game Shapes /////////////////////
 
 // Ball Shape
@@ -30,11 +28,11 @@ RectangleShape ball;
 RectangleShape line;
 
 // General Paddle Shape
-RectangleShape paddle;
+RectangleShape paddleShape;
 
 // Paddles
-RectangleShape paddleLeft;
-RectangleShape paddleRight;
+RectangleShape paddleLeftShape;
+RectangleShape paddleRightShape;
 
 // UI
 String text;
@@ -62,8 +60,8 @@ bool ballActive;
 float paddleSpeed;
 Vector2f paddleVelocity;
 
-Vector2f iaPaddleLeft;
-Vector2f iaPaddleRight;
+Vector2f iaPaddleLeftVelocity;
+Vector2f iaPaddleRightVelocity;
 
 int iaResponseTime;
 bool iaPursueLeft;
@@ -77,6 +75,8 @@ FloatRect paddleLeftCollisionBox;
 FloatRect paddleRightCollisionBox;
 
 
+Clock deltaClock;
+float deltaTime;
 
 
 int main() {
@@ -109,16 +109,16 @@ int main() {
 
 
 	// General Paddle Shape
-	paddle.setFillColor(Color::White);
-	paddle.setSize(Vector2f(15.f, 95.f));
-	paddle.setOrigin(paddle.getSize().x / 2.f, paddle.getSize().y / 2.f);
+	paddleShape.setFillColor(Color::White);
+	paddleShape.setSize(Vector2f(15.f, 95.f));
+	paddleShape.setOrigin(paddleShape.getSize().x / 2.f, paddleShape.getSize().y / 2.f);
 
 
 	// Paddles
-	paddleLeft = paddle;
-	paddleRight = paddle;
-	paddleLeft.setPosition(42.f, scrHeight / 2.f);
-	paddleRight.setPosition(scrWidth - 42.f, scrHeight / 2.f);
+	paddleLeftShape = paddleShape;
+	paddleRightShape = paddleShape;
+	paddleLeftShape.setPosition(42.f, scrHeight / 2.f);
+	paddleRightShape.setPosition(scrWidth - 42.f, scrHeight / 2.f);
 
 
 	// UI
@@ -134,14 +134,14 @@ int main() {
 
 
 	///////////////////// INIT /////////////////////
-	initialBallSpeed = 7.f;
+	initialBallSpeed = 242.f;
 	ballSpeed = initialBallSpeed;
 	ballDir = Vector2f(1.f, 1.f);
 
-	paddleSpeed = 35.f;
+	paddleSpeed = 342.f; //35
 	paddleVelocity = Vector2f(0, 0);
-	iaPaddleLeft = Vector2f(0, 0);
-	iaPaddleRight = Vector2f(0, 0);
+	iaPaddleLeftVelocity = Vector2f(0, 0);
+	iaPaddleRightVelocity = Vector2f(0, 0);
 
 	iaPursueLeft = false;
 	iaPursueRight = false;
@@ -151,8 +151,8 @@ int main() {
 	iaResponseTime = 250;
 
 	ballCollisionBox = ball.getGlobalBounds();
-	paddleLeftCollisionBox = paddleLeft.getGlobalBounds();
-	paddleRightCollisionBox = paddleRight.getGlobalBounds();
+	paddleLeftCollisionBox = paddleLeftShape.getGlobalBounds();
+	paddleRightCollisionBox = paddleRightShape.getGlobalBounds();
 
 	ballActive = true;
 
@@ -169,6 +169,7 @@ int main() {
 
 	/////// Main Game Loop ///////
 	while (window.isOpen()) {
+		deltaTime = deltaClock.restart().asSeconds();
 		/*
 		******************************************
 		Close Game
@@ -196,11 +197,11 @@ int main() {
 
 		// Play with keyboard
 		if (Keyboard::isKeyPressed(Keyboard::Up) || Keyboard::isKeyPressed(Keyboard::W)) {
-			if (paddleRight.getPosition().y > paddleRight.getSize().y / 2) {
+			if (paddleRightShape.getPosition().y > paddleRightShape.getSize().y / 2) {
 				paddleVelocity.y = -paddleSpeed;
 			}
 		} else if (Keyboard::isKeyPressed(Keyboard::Down) || Keyboard::isKeyPressed(Keyboard::S)) {
-			if (paddleRight.getPosition().y < scrHeight - paddleRight.getSize().y / 2) {
+			if (paddleRightShape.getPosition().y < scrHeight - paddleRightShape.getSize().y / 2) {
 				paddleVelocity.y = paddleSpeed;
 			}
 		}
@@ -218,7 +219,6 @@ int main() {
 		// When ball hit the walls
 		if (ball.getPosition().y < ball.getSize().y || ball.getPosition().y > scrHeight - ball.getSize().y) {
 			ballDir.y *= -1.f;
-
 			sound.setBuffer(padWall);
 			sound.setPitch(1);
 			sound.play();
@@ -227,8 +227,8 @@ int main() {
 
 
 		ballCollisionBox = ball.getGlobalBounds();
-		paddleLeftCollisionBox = paddleLeft.getGlobalBounds();
-		paddleRightCollisionBox = paddleRight.getGlobalBounds();
+		paddleLeftCollisionBox = paddleLeftShape.getGlobalBounds();
+		paddleRightCollisionBox = paddleRightShape.getGlobalBounds();
 
 
 		/////// When ball hit the paddles - Collisions ///////
@@ -238,7 +238,7 @@ int main() {
 			ballDir.x *= -1.f;
 			//srand(time(0)*20);
 			//ballSpeed = (rand() % 21) + 21;
-			ballSpeed += 0.25f;
+			ballSpeed += 50;
 
 			srand(time(0)*20);
 			int rndResponseTime = (rand() % 500);
@@ -308,11 +308,11 @@ int main() {
 		scoreUI.setPosition((scrWidth - 8) / 2.f, scrHeight / 2.f);
 
 
-		//paddleRight.move(paddleVelocity); TODO
-		paddleLeft.move(iaPaddleLeft);
-		paddleRight.move(iaPaddleRight);
+		//paddleRightShape.move(paddleVelocity); TODO
+		paddleLeftShape.move(iaPaddleLeftVelocity * deltaTime);
+		paddleRightShape.move(iaPaddleRightVelocity * deltaTime);
 		ballDir = normalized(ballDir);
-		ball.move(Vector2f(ballDir.x * ballSpeed, ballDir.y * ballSpeed));
+		ball.move(Vector2f(ballDir.x * ballSpeed, ballDir.y * ballSpeed) * deltaTime);
 
 
 		// Debug
@@ -332,8 +332,8 @@ int main() {
 		window.draw(line);
 		window.draw(scoreUI);
 		window.draw(ball);
-		window.draw(paddleLeft);
-		window.draw(paddleRight);
+		window.draw(paddleLeftShape);
+		window.draw(paddleRightShape);
 
 
 		window.display();
@@ -369,6 +369,8 @@ Vector2f normalized(const Vector2f source) {
 
 
 void iaMovement(void) {
+	iaPaddleRightVelocity.y = 0;
+	iaPaddleLeftVelocity.y = 0;
 	///////////////////// IA Movement /////////////////////
 	if (ball.getPosition().x + iaResponseTime < scrWidth / 2.f && ballDir.x < 0) {
 		iaPursueLeft = true;
@@ -377,28 +379,24 @@ void iaMovement(void) {
 		iaPursueLeft = false;
 	}
 
-	//iaPaddleLeft.y = 0;
 	if (iaPursueLeft) {
-		if (paddleLeft.getPosition().y > ball.getPosition().y) {
-			if (paddleLeft.getPosition().y > paddleLeft.getSize().y / 2) {
-				iaPaddleLeft.y = -paddleSpeed;
+		if (paddleLeftShape.getPosition().y > ball.getPosition().y) {
+			if (paddleLeftShape.getPosition().y > paddleLeftShape.getSize().y / 2) {
+				iaPaddleLeftVelocity.y = -paddleSpeed;
 			}
 		}
-		else if (paddleLeft.getPosition().y < ball.getPosition().y) {
-			if (paddleLeft.getPosition().y < scrHeight - paddleLeft.getSize().y / 2) {
-				iaPaddleLeft.y = paddleSpeed;
+		else if (paddleLeftShape.getPosition().y < ball.getPosition().y) {
+			if (paddleLeftShape.getPosition().y < scrHeight - paddleLeftShape.getSize().y / 2) {
+				iaPaddleLeftVelocity.y = paddleSpeed;
 			}
 		}
 	}
 	if (!iaPursueLeft) {
-		if (paddleLeft.getPosition().y < scrHeight / 2.f) {
-			iaPaddleLeft.y = paddleSpeed;
+		if (paddleLeftShape.getPosition().y < scrHeight / 2.f) {
+			iaPaddleLeftVelocity.y = paddleSpeed;
 		}
-		else if (paddleLeft.getPosition().y > scrHeight / 2.f) {
-			iaPaddleLeft.y = -paddleSpeed;
-		}
-		else {
-			iaPaddleLeft.y = 0;
+		else if (paddleLeftShape.getPosition().y > scrHeight / 2.f) {
+			iaPaddleLeftVelocity.y = -paddleSpeed;
 		}
 	}
 
@@ -411,28 +409,25 @@ void iaMovement(void) {
 		iaPursueRight = false;
 	}
 
-	//iaPaddleRight.y = 0;
 	if (iaPursueRight) {
-		if (paddleRight.getPosition().y > ball.getPosition().y) {
-			if (paddleRight.getPosition().y > paddleRight.getSize().y / 2) {
-				iaPaddleRight.y = -paddleSpeed;
+		if (paddleRightShape.getPosition().y > ball.getPosition().y) {
+			if (paddleRightShape.getPosition().y > paddleRightShape.getSize().y / 2) {
+				iaPaddleRightVelocity.y = -paddleSpeed;
 			}
 		}
-		else if (paddleRight.getPosition().y < ball.getPosition().y) {
-			if (paddleRight.getPosition().y < scrHeight - paddleRight.getSize().y / 2) {
-				iaPaddleRight.y = paddleSpeed;
+		else if (paddleRightShape.getPosition().y < ball.getPosition().y) {
+			if (paddleRightShape.getPosition().y < scrHeight - paddleRightShape.getSize().y / 2) {
+				iaPaddleRightVelocity.y = paddleSpeed;
 			}
 		}
 	}
+	cout << to_string(iaPaddleLeftVelocity.y) << endl;
 	if (!iaPursueRight) {
-		if (paddleRight.getPosition().y < scrHeight / 2.f) {
-			iaPaddleRight.y = paddleSpeed;
+		if (paddleRightShape.getPosition().y < scrHeight / 2.f) {
+			iaPaddleRightVelocity.y = paddleSpeed;
 		}
-		else if (paddleRight.getPosition().y > scrHeight / 2.f) {
-			iaPaddleRight.y = -paddleSpeed;
-		}
-		else {
-			iaPaddleRight.y = 0;
+		else if (paddleRightShape.getPosition().y > scrHeight / 2.f) {
+			iaPaddleRightVelocity.y = -paddleSpeed;
 		}
 	}
 }
@@ -440,10 +435,10 @@ void iaMovement(void) {
 
 void debug(void) {
 	// print_vector(ball.getPosition().x, ball.getPosition().y);
-	// print_vector(paddleRight.getOrigin().x, paddleRight.getOrigin().y);
-	// print_vector(paddleLeft.getPosition().x, paddleLeft.getPosition().y);
-	// print_vector(paddleRight.getOrigin().x, paddleRight.getOrigin().y);
-	// print_vector(paddleLeft.getOrigin().x, paddleLeft.getOrigin().y);
+	// print_vector(paddleRightShape.getOrigin().x, paddleRightShape.getOrigin().y);
+	// print_vector(paddleLeftShape.getPosition().x, paddleLeftShape.getPosition().y);
+	// print_vector(paddleRightShape.getOrigin().x, paddleRightShape.getOrigin().y);
+	// print_vector(paddleLeftShape.getOrigin().x, paddleLeftShape.getOrigin().y);
 	// print_vector(ballSpeed.x, ballSpeed.y);
 	// print_vector(ballDir.x, ballDir.y);
 
@@ -453,7 +448,7 @@ void debug(void) {
 	// FloatRect textRect = scoreUI.getLocalBounds();
 	// string debug_text = "textRect.top: " + to_string(textRect.width) + "\ntextRect.width: " + to_string(textRect.width) + "\n";
 	// cout << debug_text;
-	// pivotPoint.setPosition(paddleLeft.getPosition());
+	// pivotPoint.setPosition(paddleLeftShape.getPosition());
 
 	//cout << "ballSpeed: " << ballSpeed << endl; // Debug
 	//cout << "iaResponseTime is now: " << iaResponseTime << endl; // Debug
