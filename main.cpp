@@ -8,9 +8,6 @@
 using namespace std;
 using namespace sf;
 
-
-
-
 Vector2f normalized(const Vector2f source);
 void iaMovement(void);
 void debug(void);
@@ -86,7 +83,7 @@ int main() {
 	scrHeight = 720;
 	VideoMode vm(scrWidth, scrHeight);
 	RenderWindow window(vm, "Pong", Style::Default);
-	window.setFramerateLimit(144);
+	window.setFramerateLimit(60);
 	window.setVerticalSyncEnabled(false);
 
 	// Capture Mouse
@@ -138,7 +135,7 @@ int main() {
 	ballSpeed = initialBallSpeed;
 	ballDir = Vector2f(1.f, 1.f);
 
-	paddleSpeed = 342.f; //35
+	paddleSpeed = 2000.f; //35
 	paddleVelocity = Vector2f(0, 0);
 	iaPaddleLeftVelocity = Vector2f(0, 0);
 	iaPaddleRightVelocity = Vector2f(0, 0);
@@ -217,7 +214,12 @@ int main() {
 
 		/////// Ball Movement ///////
 		// When ball hit the walls
-		if (ball.getPosition().y < ball.getSize().y || ball.getPosition().y > scrHeight - ball.getSize().y) {
+		if (ball.getPosition().y < ball.getSize().y && ballDir.y < 0){
+			ballDir.y *= -1.f;
+			sound.setBuffer(padWall);
+			sound.setPitch(1);
+			sound.play();
+		} else if (ball.getPosition().y > scrHeight - ball.getSize().y && ballDir.y > 0) {
 			ballDir.y *= -1.f;
 			sound.setBuffer(padWall);
 			sound.setPitch(1);
@@ -299,24 +301,22 @@ int main() {
 		Update the scene
 		******************************************
 		*/
-		iaMovement();
-
 		text = to_string(iaScore) + "  " + to_string(playerScore);
 
 		scoreUI.setString(text);
 		scoreUI.setOrigin(scoreUI.getGlobalBounds().width / 2.f, scoreUI.getGlobalBounds().height / 2.f);
 		scoreUI.setPosition((scrWidth - 8) / 2.f, scrHeight / 2.f);
 
-
+		iaMovement();
 		//paddleRightShape.move(paddleVelocity); TODO
-		paddleLeftShape.move(iaPaddleLeftVelocity * deltaTime);
-		paddleRightShape.move(iaPaddleRightVelocity * deltaTime);
+		paddleLeftShape.move(iaPaddleLeftVelocity * paddleSpeed * deltaTime);
+		paddleRightShape.move(iaPaddleRightVelocity * paddleSpeed * deltaTime);
 		ballDir = normalized(ballDir);
 		ball.move(Vector2f(ballDir.x * ballSpeed, ballDir.y * ballSpeed) * deltaTime);
 
 
 		// Debug
-		debug();
+		//debug();
 
 
 
@@ -369,8 +369,8 @@ Vector2f normalized(const Vector2f source) {
 
 
 void iaMovement(void) {
-	iaPaddleRightVelocity.y = 0;
-	iaPaddleLeftVelocity.y = 0;
+	iaPaddleLeftVelocity = Vector2f(0,0);
+	iaPaddleRightVelocity = Vector2f(0,0);
 	///////////////////// IA Movement /////////////////////
 	if (ball.getPosition().x + iaResponseTime < scrWidth / 2.f && ballDir.x < 0) {
 		iaPursueLeft = true;
@@ -382,22 +382,23 @@ void iaMovement(void) {
 	if (iaPursueLeft) {
 		if (paddleLeftShape.getPosition().y > ball.getPosition().y) {
 			if (paddleLeftShape.getPosition().y > paddleLeftShape.getSize().y / 2) {
-				iaPaddleLeftVelocity.y = -paddleSpeed;
+				iaPaddleLeftVelocity.y = -1;
 			}
 		}
 		else if (paddleLeftShape.getPosition().y < ball.getPosition().y) {
 			if (paddleLeftShape.getPosition().y < scrHeight - paddleLeftShape.getSize().y / 2) {
-				iaPaddleLeftVelocity.y = paddleSpeed;
+				iaPaddleLeftVelocity.y = 1;
 			}
 		}
 	}
 	if (!iaPursueLeft) {
 		if (paddleLeftShape.getPosition().y < scrHeight / 2.f) {
-			iaPaddleLeftVelocity.y = paddleSpeed;
+			iaPaddleLeftVelocity.y = 1;
 		}
 		else if (paddleLeftShape.getPosition().y > scrHeight / 2.f) {
-			iaPaddleLeftVelocity.y = -paddleSpeed;
+			iaPaddleLeftVelocity.y = -1;
 		}
+
 	}
 
 
@@ -412,22 +413,21 @@ void iaMovement(void) {
 	if (iaPursueRight) {
 		if (paddleRightShape.getPosition().y > ball.getPosition().y) {
 			if (paddleRightShape.getPosition().y > paddleRightShape.getSize().y / 2) {
-				iaPaddleRightVelocity.y = -paddleSpeed;
+				iaPaddleRightVelocity.y = -1;
 			}
 		}
 		else if (paddleRightShape.getPosition().y < ball.getPosition().y) {
 			if (paddleRightShape.getPosition().y < scrHeight - paddleRightShape.getSize().y / 2) {
-				iaPaddleRightVelocity.y = paddleSpeed;
+				iaPaddleRightVelocity.y = 1;
 			}
 		}
 	}
-	cout << to_string(iaPaddleLeftVelocity.y) << endl;
 	if (!iaPursueRight) {
 		if (paddleRightShape.getPosition().y < scrHeight / 2.f) {
-			iaPaddleRightVelocity.y = paddleSpeed;
+			iaPaddleRightVelocity.y = 1;
 		}
 		else if (paddleRightShape.getPosition().y > scrHeight / 2.f) {
-			iaPaddleRightVelocity.y = -paddleSpeed;
+			iaPaddleRightVelocity.y = -1;
 		}
 	}
 }
@@ -453,4 +453,6 @@ void debug(void) {
 	//cout << "ballSpeed: " << ballSpeed << endl; // Debug
 	//cout << "iaResponseTime is now: " << iaResponseTime << endl; // Debug
 	//cout << "Ball: " << rnd << endl; // Debug
+
+	//HUEHUAHEUAHEUAH experimentar mudar o deltaTime de "asSeconds()" para "asMilliseconds()" HAUEHAUHEUAHEUAHEUAHUE
 }
