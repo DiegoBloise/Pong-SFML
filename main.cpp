@@ -307,10 +307,10 @@ int main() {
 		scoreUI.setOrigin(scoreUI.getGlobalBounds().width / 2.f, scoreUI.getGlobalBounds().height / 2.f);
 		scoreUI.setPosition((scrWidth - 8) / 2.f, scrHeight / 2.f);
 
-		iaMovement();
+		
 		//paddleRightShape.move(paddleVelocity); TODO
-		paddleLeftShape.move(iaPaddleLeftVelocity * paddleSpeed * deltaTime);
-		paddleRightShape.move(iaPaddleRightVelocity * paddleSpeed * deltaTime);
+		paddleLeftShape.move(iaMovement(paddleLeftShape) * paddleSpeed * deltaTime);
+		paddleRightShape.move(iaMovement(paddleRightShape) * paddleSpeed * deltaTime);
 		ballDir = normalized(ballDir);
 		ball.move(Vector2f(ballDir.x * ballSpeed, ballDir.y * ballSpeed) * deltaTime);
 
@@ -368,68 +368,39 @@ Vector2f normalized(const Vector2f source) {
 }
 
 
-void iaMovement(void) {
-	iaPaddleLeftVelocity = Vector2f(0,0);
-	iaPaddleRightVelocity = Vector2f(0,0);
+Vector2f iaMovement(RectangleShape iaPaddleShape) {
+	Vector2f iaPaddleVelocity = Vector2f(0, 0);
+	bool iaPursue;
 	///////////////////// IA Movement /////////////////////
 	if (ball.getPosition().x + iaResponseTime < scrWidth / 2.f && ballDir.x < 0) {
-		iaPursueLeft = true;
+		iaPursue = true;
 	}
 	else {
-		iaPursueLeft = false;
+		iaPursue = false;
 	}
 
-	if (iaPursueLeft) {
-		if (paddleLeftShape.getPosition().y > ball.getPosition().y) {
-			if (paddleLeftShape.getPosition().y > paddleLeftShape.getSize().y / 2) {
-				iaPaddleLeftVelocity.y = -1;
+	if (iaPursue) {
+		if (iaPaddleShape.getPosition().y > ball.getPosition().y) {
+			if (iaPaddleShape.getPosition().y > iaPaddleShape.getSize().y / 2) {
+				iaPaddleVelocity.y = -1;
 			}
 		}
-		else if (paddleLeftShape.getPosition().y < ball.getPosition().y) {
-			if (paddleLeftShape.getPosition().y < scrHeight - paddleLeftShape.getSize().y / 2) {
-				iaPaddleLeftVelocity.y = 1;
-			}
-		}
-	}
-	if (!iaPursueLeft) {
-		if (paddleLeftShape.getPosition().y < scrHeight / 2.f) {
-			iaPaddleLeftVelocity.y = 1;
-		}
-		else if (paddleLeftShape.getPosition().y > scrHeight / 2.f) {
-			iaPaddleLeftVelocity.y = -1;
-		}
-
-	}
-
-
-	// IA SECOND //////////////////////////////////////////
-	if (ball.getPosition().x - iaResponseTime > scrWidth / 2.f && ballDir.x > 0) {
-		iaPursueRight = true;
-	}
-	else {
-		iaPursueRight = false;
-	}
-
-	if (iaPursueRight) {
-		if (paddleRightShape.getPosition().y > ball.getPosition().y) {
-			if (paddleRightShape.getPosition().y > paddleRightShape.getSize().y / 2) {
-				iaPaddleRightVelocity.y = -1;
-			}
-		}
-		else if (paddleRightShape.getPosition().y < ball.getPosition().y) {
-			if (paddleRightShape.getPosition().y < scrHeight - paddleRightShape.getSize().y / 2) {
-				iaPaddleRightVelocity.y = 1;
+		else if (iaPaddleShape.getPosition().y < ball.getPosition().y) {
+			if (iaPaddleShape.getPosition().y < scrHeight - iaPaddleShape.getSize().y / 2) {
+				iaPaddleVelocity.y = 1;
 			}
 		}
 	}
-	if (!iaPursueRight) {
-		if (paddleRightShape.getPosition().y < scrHeight / 2.f) {
-			iaPaddleRightVelocity.y = 1;
+	if (!iaPursue) {
+		if (iaPaddleShape.getPosition().y < scrHeight / 2.f) {
+			iaPaddleVelocity.y = 1;
 		}
-		else if (paddleRightShape.getPosition().y > scrHeight / 2.f) {
-			iaPaddleRightVelocity.y = -1;
+		else if (iaPaddleShape.getPosition().y > scrHeight / 2.f) {
+			iaPaddleVelocity.y = -1;
 		}
+
 	}
+	return iaPaddleVelocity;
 }
 
 
