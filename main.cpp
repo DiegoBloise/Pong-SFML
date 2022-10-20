@@ -8,79 +8,17 @@
 using namespace std;
 using namespace sf;
 
+Vector2f iaMovement(RectangleShape iaPaddleShape, bool &iaPursue, const float &iaResponseTime, const float &scrWidth, const float &scrHeight, const Vector2f &ballDir, const RectangleShape &ball);
 Vector2f normalized(const Vector2f source);
-void iaMovement(void);
 void debug(void);
-
-int scrWidth = 1280;
-int scrHeight = 720;
-
-
-///////////////////// Game Shapes /////////////////////
-
-// Ball Shape
-RectangleShape ball;
-
-// Field Line Shape
-RectangleShape line;
-
-// General Paddle Shape
-RectangleShape paddleShape;
-
-// Paddles
-RectangleShape paddleLeftShape;
-RectangleShape paddleRightShape;
-
-// UI
-String text;
-Font font;
-Text scoreUI;
-
-// Audio
-Sound sound;
-SoundBuffer goal;
-SoundBuffer padWall;
-
-// Debug
-CircleShape pivotPoint;
-
-
-
-
-///////////////////// Game Logic /////////////////////
-
-float initialBallSpeed;
-float ballSpeed;
-Vector2f ballDir;
-bool ballActive;
-
-float paddleSpeed;
-Vector2f paddleVelocity;
-
-Vector2f iaPaddleLeftVelocity;
-Vector2f iaPaddleRightVelocity;
-
-int iaResponseTime;
-bool iaPursueLeft;
-bool iaPursueRight;
-
-int playerScore;
-int iaScore;
-
-FloatRect ballCollisionBox;
-FloatRect paddleLeftCollisionBox;
-FloatRect paddleRightCollisionBox;
-
-
-Clock deltaClock;
-float deltaTime;
 
 
 int main() {
 
-	// Create Window
-	scrWidth = 1280;
-	scrHeight = 720;
+	// Create Window Setup
+	float scrWidth = 1280;
+	float scrHeight = 720;
+
 	VideoMode vm(scrWidth, scrHeight);
 	RenderWindow window(vm, "Pong", Style::Default);
 	window.setFramerateLimit(60);
@@ -91,7 +29,36 @@ int main() {
 	window.setMouseCursorVisible(false);
 
 
+	///////////////////// Game Logic /////////////////////
+
+	Clock deltaClock;
+	float deltaTime;
+
+	float initialBallSpeed;
+	float ballSpeed;
+	Vector2f ballDir;
+
+	float paddleSpeed;
+	Vector2f paddleVelocity;
+
+	Vector2f iaPaddleLeftVelocity;
+	Vector2f iaPaddleRightVelocity;
+
+	float iaResponseTime;
+	bool iaPursue;
+
+	int playerScore;
+	int iaScore;
+
+	FloatRect ballCollisionBox;
+	FloatRect paddleLeftCollisionBox;
+	FloatRect paddleRightCollisionBox;
+
+
+	///////////////////// Game Shapes /////////////////////
+
 	// Ball Shape
+	RectangleShape ball;
 	ball.setFillColor(Color::Green);
 	ball.setSize(Vector2f(20.f, 20.f));
 	ball.setOrigin(ball.getSize().x / 2.f, ball.getSize().y / 2.f);
@@ -99,6 +66,7 @@ int main() {
 
 
 	// Field Line Shape
+	RectangleShape line;
 	line.setFillColor(Color::White);
 	line.setSize(Vector2f(5.f, scrHeight));
 	line.setOrigin(line.getSize().x / 2.f, scrHeight / 2.f);
@@ -106,12 +74,15 @@ int main() {
 
 
 	// General Paddle Shape
+	RectangleShape paddleShape;
 	paddleShape.setFillColor(Color::White);
 	paddleShape.setSize(Vector2f(15.f, 95.f));
 	paddleShape.setOrigin(paddleShape.getSize().x / 2.f, paddleShape.getSize().y / 2.f);
 
 
 	// Paddles
+	RectangleShape paddleLeftShape;
+	RectangleShape paddleRightShape;
 	paddleLeftShape = paddleShape;
 	paddleRightShape = paddleShape;
 	paddleLeftShape.setPosition(42.f, scrHeight / 2.f);
@@ -119,6 +90,9 @@ int main() {
 
 
 	// UI
+	String text;
+	Font font;
+	Text scoreUI;
 	font.loadFromFile("font/font.ttf");
 	scoreUI.setFillColor(Color::White);
 	scoreUI.setCharacterSize(42);
@@ -126,33 +100,43 @@ int main() {
 
 
 	// Audio
+	Sound sound;
+	SoundBuffer goal;
+	SoundBuffer padWall;
+
 	goal.loadFromFile("audio/goal.wav");
 	padWall.loadFromFile("audio/pad_wall.wav");
 
 
-	///////////////////// INIT /////////////////////
+	// Debug
+	CircleShape pivotPoint;
+
+
+	/*
+	************************************************************************************
+	INIT
+	************************************************************************************
+	*/
+
 	initialBallSpeed = 242.f;
 	ballSpeed = initialBallSpeed;
 	ballDir = Vector2f(1.f, 1.f);
 
 	paddleSpeed = 2000.f; //35
 	paddleVelocity = Vector2f(0, 0);
+
 	iaPaddleLeftVelocity = Vector2f(0, 0);
 	iaPaddleRightVelocity = Vector2f(0, 0);
 
-	iaPursueLeft = false;
-	iaPursueRight = false;
+	iaResponseTime = 250;
+	iaPursue = true;
 
 	playerScore = 0;
 	iaScore = 0;
-	iaResponseTime = 250;
 
 	ballCollisionBox = ball.getGlobalBounds();
 	paddleLeftCollisionBox = paddleLeftShape.getGlobalBounds();
 	paddleRightCollisionBox = paddleRightShape.getGlobalBounds();
-
-	ballActive = true;
-
 
 
 	// Debug
@@ -161,17 +145,16 @@ int main() {
 	pivotPoint.setOrigin(pivotPoint.getLocalBounds().width/2.f, pivotPoint.getLocalBounds().height/2.f);
 
 
-	//////////////////////////////////////////////////////
 
-
-	/////// Main Game Loop ///////
+	/*
+	************************************************************************************
+	GAME LOOP
+	************************************************************************************
+	*/
 	while (window.isOpen()) {
 		deltaTime = deltaClock.restart().asSeconds();
-		/*
-		******************************************
-		Close Game
-		******************************************
-		*/
+
+		///////////////////// Close Game /////////////////////
 		sf::Event event;
         while (window.pollEvent(event)){
             if (event.type == sf::Event::Closed)
@@ -185,9 +168,9 @@ int main() {
 
 
 		/*
-		******************************************
+		************************************************************************************
 		Handle the players input
-		******************************************
+		************************************************************************************
 		*/
 
 		paddleVelocity.y = 0;
@@ -207,12 +190,12 @@ int main() {
 
 
 		/*
-		******************************************
+		************************************************************************************
 		Update Game Logic
-		******************************************
+		************************************************************************************
 		*/
 
-		/////// Ball Movement ///////
+		///////////////////// Ball Movement /////////////////////
 		// When ball hit the walls
 		if (ball.getPosition().y < ball.getSize().y && ballDir.y < 0){
 			ballDir.y *= -1.f;
@@ -225,7 +208,6 @@ int main() {
 			sound.setPitch(1);
 			sound.play();
 		}
-		/////// END - Ball Movement ///////
 
 
 		ballCollisionBox = ball.getGlobalBounds();
@@ -233,10 +215,8 @@ int main() {
 		paddleRightCollisionBox = paddleRightShape.getGlobalBounds();
 
 
-		/////// When ball hit the paddles - Collisions ///////
-		if (ballActive && (ballCollisionBox.intersects(paddleLeftCollisionBox) || ballCollisionBox.intersects(paddleRightCollisionBox))) {
-			ballActive = false;
-
+		///////////////////// When ball hit the paddles - Collisions /////////////////////
+		if (ballCollisionBox.intersects(paddleLeftCollisionBox) && ballDir.x < 0) {
 			ballDir.x *= -1.f;
 			//srand(time(0)*20);
 			//ballSpeed = (rand() % 21) + 21;
@@ -253,16 +233,28 @@ int main() {
 			sound.setBuffer(padWall);
 			sound.setPitch(1.5f);
 			sound.play();
-
 		}
-		// Evitar bugs de colisão, desativando-a e reativando-a assim que a bola chegar ao meio da tela
-		if (!ballActive && ball.getPosition().x < (scrWidth / 2) + 20 && ball.getPosition().x > (scrWidth / 2) - 20 ){
-			ballActive = true;
+		if (ballCollisionBox.intersects(paddleRightCollisionBox) && ballDir.x < 0) {
+			ballDir.x *= -1.f;
+			//srand(time(0)*20);
+			//ballSpeed = (rand() % 21) + 21;
+			ballSpeed += 50;
+
+			srand(time(0)*20);
+			int rndResponseTime = (rand() % 500);
+			iaResponseTime = 0;//rndResponseTime;
+
+			// TODO: Melhorar angulo
+			double rnd = 1.0 * rand() / (RAND_MAX / 2) - 1;
+			ballDir.y = rnd;
+
+			sound.setBuffer(padWall);
+			sound.setPitch(1.5f);
+			sound.play();
 		}
-		/////// END - When ball hit the paddles - Collisions ///////
 
 
-		/////// Scores ///////
+		///////////////////// Scores /////////////////////
 		// Player score
 		if (ball.getPosition().x < 0) {
 			playerScore += 1;
@@ -291,15 +283,12 @@ int main() {
 			ball.setPosition(scrWidth / 2.f, scrHeight / 2.f);
 			iaResponseTime = 0;
 		}
-		/////// END - Scores ///////
-
-
 
 
 		/*
-		******************************************
+		************************************************************************************
 		Update the scene
-		******************************************
+		************************************************************************************
 		*/
 		text = to_string(iaScore) + "  " + to_string(playerScore);
 
@@ -307,10 +296,11 @@ int main() {
 		scoreUI.setOrigin(scoreUI.getGlobalBounds().width / 2.f, scoreUI.getGlobalBounds().height / 2.f);
 		scoreUI.setPosition((scrWidth - 8) / 2.f, scrHeight / 2.f);
 
-		
+
 		//paddleRightShape.move(paddleVelocity); TODO
-		paddleLeftShape.move(iaMovement(paddleLeftShape) * paddleSpeed * deltaTime);
-		paddleRightShape.move(iaMovement(paddleRightShape) * paddleSpeed * deltaTime);
+		paddleLeftShape.move(iaMovement(paddleLeftShape, iaPursue, iaResponseTime, scrWidth, scrHeight, ballDir, ball) * paddleSpeed * deltaTime);
+		paddleRightShape.move(iaMovement(paddleRightShape, iaPursue, iaResponseTime, scrWidth, scrHeight, ballDir, ball) * paddleSpeed * deltaTime);
+
 		ballDir = normalized(ballDir);
 		ball.move(Vector2f(ballDir.x * ballSpeed, ballDir.y * ballSpeed) * deltaTime);
 
@@ -319,12 +309,10 @@ int main() {
 		//debug();
 
 
-
-
 		/*
-		******************************************
+		************************************************************************************
 		Draw the scene
-		******************************************
+		************************************************************************************
 		*/
 		window.clear();
 
@@ -343,18 +331,14 @@ int main() {
 }
 
 
-void print_vector(float x, float y) {
-	cout << "(X: " << to_string(x) << ", Y: " << to_string(y) << ")\n";
-}
-
-
+/*
 Vector2f normalize(const Vector2f& source) {
 	float length = sqrt((source.x * source.x) + (source.y * source.y));
 	if (length != 0)
 		return Vector2f(source.x / length, source.y / length);
 	else
 		return source;
-}
+}*/
 
 
 Vector2f normalized(const Vector2f source) {
@@ -368,10 +352,9 @@ Vector2f normalized(const Vector2f source) {
 }
 
 
-Vector2f iaMovement(RectangleShape iaPaddleShape) {
+Vector2f iaMovement(RectangleShape iaPaddleShape, bool &iaPursue, const float &iaResponseTime, const float &scrWidth, const float &scrHeight, const Vector2f &ballDir, const RectangleShape &ball) {
 	Vector2f iaPaddleVelocity = Vector2f(0, 0);
-	bool iaPursue;
-	///////////////////// IA Movement /////////////////////
+
 	if (ball.getPosition().x + iaResponseTime < scrWidth / 2.f && ballDir.x < 0) {
 		iaPursue = true;
 	}
@@ -385,7 +368,7 @@ Vector2f iaMovement(RectangleShape iaPaddleShape) {
 				iaPaddleVelocity.y = -1;
 			}
 		}
-		else if (iaPaddleShape.getPosition().y < ball.getPosition().y) {
+		if (iaPaddleShape.getPosition().y < ball.getPosition().y) {
 			if (iaPaddleShape.getPosition().y < scrHeight - iaPaddleShape.getSize().y / 2) {
 				iaPaddleVelocity.y = 1;
 			}
@@ -395,12 +378,18 @@ Vector2f iaMovement(RectangleShape iaPaddleShape) {
 		if (iaPaddleShape.getPosition().y < scrHeight / 2.f) {
 			iaPaddleVelocity.y = 1;
 		}
-		else if (iaPaddleShape.getPosition().y > scrHeight / 2.f) {
+		if (iaPaddleShape.getPosition().y > scrHeight / 2.f) {
 			iaPaddleVelocity.y = -1;
 		}
 
 	}
 	return iaPaddleVelocity;
+}
+
+
+/*
+void print_vector(float x, float y) {
+	cout << "(X: " << to_string(x) << ", Y: " << to_string(y) << ")\n";
 }
 
 
@@ -427,3 +416,4 @@ void debug(void) {
 
 	//HUEHUAHEUAHEUAH experimentar mudar o deltaTime de "asSeconds()" para "asMilliseconds()" HAUEHAUHEUAHEUAHEUAHUE
 }
+*/
