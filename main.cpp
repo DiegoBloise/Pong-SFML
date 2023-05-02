@@ -10,7 +10,7 @@ using namespace sf;
 
 Vector2f iaMovement(RectangleShape iaPaddleShape, bool &iaPursue, const float &iaResponseTime, const float &scrWidth, const float &scrHeight, const Vector2f &ballDir, const RectangleShape &ball);
 Vector2f normalized(const Vector2f source);
-void debug(void);
+// void debug(void);
 
 
 int main() {
